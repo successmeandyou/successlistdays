@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Productivity Companion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #f4f6f9;
+            --bg-white: #ffffff;
+            --color-primary: #3498db;
+            --color-success: #2ecc71;
+            --color-danger: #e74c3c;
+            --color-warning: #f39c12;
+            --color-text: #2c3e50;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .app-card {
+            background-color: var(--bg-white);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--color-primary);
+            color: white;
+        }
+        .app-header h1 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+        .tab-navigation {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background-color: #f9f9f9;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .tab-btn.active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .input-group input, 
+        .input-group select, 
+        .input-group button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+        .input-group input { 
+            flex-grow: 1; 
+            border-radius: 4px 0 0 4px;
+        }
+        .input-group select {
+            width: 140px;
+            background: #f9f9f9;
+        }
+        .input-group button {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .task-list {
+            list-style-type: none;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .task-item.low-priority { border-left: 4px solid var(--color-success); }
+        .task-item.medium-priority { border-left: 4px solid var(--color-warning); }
+        .task-item.high-priority { border-left: 4px solid var(--color-danger); }
+        .task-item.completed { 
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .task-item input[type="checkbox"] {
+            margin-right: 12px;
+        }
+        .task-item .task-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+        .journal-date-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .journal-textarea {
+            width: 100%;
+            min-height: 400px;
+            height: auto;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 1rem;
+            line-height: 1.5;
+            overflow-y: visible;
+        }
+        .empty-state {
+            text-align: center;
+            color: #777;
+            padding: 30px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        @media (max-width: 480px) {
+            .stats-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-card">
+            <div class="app-header">
+                <h1>
+                    <i class="ri-task-line"></i>
+                    Productivity Companion
+                </h1>
+                <div id="app-stats"></div>
+            </div>
+
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="tasks">
+                    <i class="ri-list-check"></i> Tasks
+                </button>
+                <button class="tab-btn" data-tab="journal">
+                    <i class="ri-book-open-line"></i> Journal
+                </button>
+                <button class="tab-btn" data-tab="stats">
+                    <i class="ri-bar-chart-line"></i> Stats
+                </button>
+            </div>
+
+            <div id="tasks-tab" class="tab-content active">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="task-input" 
+                        placeholder="Add a new task"
+                    >
+                    <select id="task-priority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <button id="add-task-btn">
+                        <i class="ri-add-line"></i>
+                    </button>
+                </div>
+
+                <div id="task-list-container">
+                    <ul id="task-list" class="task-list"></ul>
+                    <div id="empty-tasks" class="empty-state">
+                        No tasks yet. Start your productivity journey!
+                    </div>
+                </div>
+            </div>
+
+            <div id="journal-tab" class="tab-content">
+                <div class="journal-date-selector">
+                    <button id="prev-date-btn">
+                        <i class="ri-arrow-left-line"></i>
+                    </button>
+                    <input type="date" id="journal-date">
+                    <button id="next-date-btn">
+                        <i class="ri-arrow-right-line"></i>
+                    </button>
+                </div>
+
+                <textarea 
+                    id="journal-textarea" 
+                    placeholder="Reflect on your day, track your thoughts, celebrate your progress..."
+                ></textarea>
+            </div>
+
+            <div id="stats-tab" class="tab-content">
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <h3>Total Tasks</h3>
+                        <p id="total-tasks-stat">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completed Tasks</h3>
+                        <p id="completed-tasks-stat">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completion Rate</h3>
+                        <p id="completion-rate-stat">0%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ProductivityCompanion {
+            constructor() {
+                this.initializeElements();
+                this.loadData();
+                this.setupEventListeners();
+                this.renderInitialState();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    // Task elements
+                    taskInput: document.getElementById('task-input'),
+                    taskPriority: document.getElementById('task-priority'),
+                    addTaskBtn: document.getElementById('add-task-btn'),
+                    taskList: document.getElementById('task-list'),
+                    emptyTasksMessage: document.getElementById('empty-tasks'),
+
+                    // Journal elements
+                    journalDate: document.getElementById('journal-date'),
+                    journalTextarea: document.getElementById('journal-textarea'),
+                    prevDateBtn: document.getElementById('prev-date-btn'),
+                    nextDateBtn: document.getElementById('next-date-btn'),
+
+                    // Tab navigation
+                    tabBtns: document.querySelectorAll('.tab-btn'),
+                    tabContents: document.querySelectorAll('.tab-content'),
+
+                    // Stats elements
+                    totalTasksStat: document.getElementById('total-tasks-stat'),
+                    completedTasksStat: document.getElementById('completed-tasks-stat'),
+                    completionRateStat: document.getElementById('completion-rate-stat')
+                };
+            }
+
+            loadData() {
+                this.tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                this.journalEntries = JSON.parse(localStorage.getItem('journalEntries') || '{}');
+                this.selectedDate = new Date().toISOString().split('T')[0];
+                this.elements.journalDate.value = this.selectedDate;
+            }
+
+            setupEventListeners() {
+                // Task input events
+                this.elements.addTaskBtn.addEventListener('click', () => this.addTask());
+                this.elements.taskInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTask();
+                });
+
+                // Journal date navigation
+                this.elements.prevDateBtn.addEventListener('click', () => this.navigateDate(-1));
+                this.elements.nextDateBtn.addEventListener('click', () => this.navigateDate(1));
+                this.elements.journalDate.addEventListener('change', (e) => {
+                    this.selectedDate = e.target.value;
+                    this.renderJournalEntry();
+                });
+
+                // Journal textarea events
+                this.elements.journalTextarea.addEventListener('input', () => {
+                    this.saveJournalEntry();
+                });
+
+                // Tab navigation
+                this.elements.tabBtns.forEach(btn => {
+                    btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+                });
+            }
+
+            switchTab(tabName) {
+                this.elements.tabBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tabName);
+                });
+                this.elements.tabContents.forEach(content => {
+                    content.classList.toggle('active', content.id === `${tabName}-tab`);
+                });
+            }
+
+            navigateDate(direction) {
+                const currentDate = new Date(this.selectedDate);
+                currentDate.setDate(currentDate.getDate() + direction);
+                
+                this.selectedDate = currentDate.toISOString().split('T')[0];
+                this.elements.journalDate.value = this.selectedDate;
+                this.renderJournalEntry();
+            }
+
+            renderInitialState() {
+                this.renderJournalEntry();
+                this.renderTasks();
+                this.updateStats();
+            }
+
+            addTask() {
+                const taskText = this.elements.taskInput.value.trim();
+                if (taskText) {
+                    const newTask = {
+                        id: Date.now(),
+                        text: taskText,
+                        completed: false,
+                        priority: this.elements.taskPriority.value,
+                        createdAt: new Date().toISOString()
+                    };
+                    this.tasks.unshift(newTask);
+                    this.saveData();
+                    this.renderTasks();
+                    this.elements.taskInput.value = '';
+                    this.updateStats();
+                }
+            }
+
+            renderTasks() {
+                this.elements.taskList.innerHTML = '';
+
+                if (this.tasks.length === 0) {
+                    this.elements.emptyTasksMessage.style.display = 'block';
+                    return;
+                }
+
+                this.elements.emptyTasksMessage.style.display = 'none';
+
+                this.tasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.classList.add('task-item', `${task.priority}-priority`);
+                    if (task.completed) li.classList.add('completed');
+
+                    li.innerHTML = `
+                        <input type="checkbox" ${task.completed ? 'checked' : ''}>
+                        <span>${task.text}</span>
+                        <div class="task-actions">
+                            <button class="edit-btn">
+                                <i class="ri-edit-line"></i>
+                            </button>
+                            <button class="delete-btn">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    const checkbox = li.querySelector('input[type="checkbox"]');
+                    checkbox.addEventListener('change', () => this.toggleTaskCompletion(task.id));
+
+                    const deleteBtn = li.querySelector('.delete-btn');
+                    deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
+
+                    const editBtn = li.querySelector('.edit-btn');
+                    editBtn.addEventListener('click', () => this.editTask(task.id));
+
+                    this.elements.taskList.appendChild(li);
+                });
+            }
+
+            toggleTaskCompletion(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    this.saveData();
+                    this.renderTasks();
+                    this.updateStats();
+                }
+            }
+
+            editTask(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    const newText = prompt('Edit task:', task.text);
+                    if (newText && newText.trim() !== '') {
+                        task.text = newText.trim();
+                        this.saveData();
+                        this.renderTasks();
+                    }
+                }
+            }
+
+            deleteTask(id) {
+                this.tasks = this.tasks.filter(task => task.id !== id);
+                this.saveData();
+                this.renderTasks();
+                this.updateStats();
+            }
+
+            saveJournalEntry() {
+                const entry = this.elements.journalTextarea.value;
+                if (entry) {
+                    this.journalEntries[this.selectedDate] = entry;
+                    localStorage.setItem('journalEntries', JSON.stringify(this.journalEntries));
+                }
+            }
+
+            renderJournalEntry() {
+                const entry = this.journalEntries[this.selectedDate] || '';
+                this.elements.journalTextarea.value = entry;
+            }
+
+            updateStats() {
+                const totalTasks = this.tasks.length;
+                const completedTasks = this.tasks.filter(task => task.completed).length;
+                const completionRate = totalTasks > 0 ? 
+                    Math.round((completedTasks / totalTasks) * 100) : 0;
+
+                this.elements.totalTasksStat.textContent = totalTasks;
+                this.elements.completedTasksStat.textContent = completedTasks;
+                this.elements.completionRateStat.textContent = `${completionRate}%`;
+            }
+
+            saveData() {
+                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            }
+        }
+
+        // Initialize the app when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new ProductivityCompanion();
+        });
+    </script>
+</body>
+</html>
